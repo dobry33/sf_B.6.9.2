@@ -1,0 +1,68 @@
+---
+# tasks file for dnsmasq
+- name: install dnsmasq
+  apt:
+    name: dnsmasq
+    update_cache: yes
+    state: present
+
+- name: create config
+  file:
+    path: /etc/dnsmasq.d/dnsmasq.conf
+    owner: root
+    group: dnsmasq
+    mode: '0644'
+
+- name: change config
+  blockinfile:
+    path: /etc/dnsmasq.d/dnsmasq.conf
+    block:
+      # Указываем интерфейсы для прослушивания.
+      listen-address=::1
+      listen-address=127.0.0.1
+      listen-address=192.168.1.1
+      bind-interfaces
+       
+      # Запрещаем чтение файла /etc/resolv.conf для получения DNS-серверов.
+      no-resolv
+       
+      # Запрещаем добавление хостов из файла /etc/hosts.
+      no-hosts
+       
+      # Указываем вышестоящие DNS-серверы.
+      server=::1#5353
+      server=127.0.0.1#5353
+       
+      # Указываем количество элементов для локального кэша DNS.
+      cache-size=5000
+
+- name: firewall rules
+  shell: sudo firewall-cmd --add-service=dns --permanent
+  shell: sudo firewall-cmd --add-port=5353/udp --permanent
+  shell: sudo firewall-cmd --reload
+
+- name: change default resolver
+  shell: sudo systemctl disable --now systemd-resolved.service
+  shell: sudo systemctl mask systemd-resolved.service
+
+- name: remove resolc.conf
+  file: 
+    path: /etc/resolv.conf
+    state: absent
+
+- name: create resolv.conf
+  file:
+    path: /etc/resolv.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+  blockfile:
+    path: /etc/resolv.conf
+    block:
+      nameserver 127.0.0.1
+      nameserver ::1
+      options trust-ad
+      options ndots:1
+
+  

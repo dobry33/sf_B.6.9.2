@@ -1,0 +1,25 @@
+---
+- hosts: 172.16.111.128
+  gather_facts: no
+  roles:
+    - dnsmasq
+
+  tasks:
+  - name: create group
+    group:
+      name: superusers
+      state: present
+
+  - name: create users
+    user:
+      name: user2
+      groups: superusers
+
+    user:  
+      name: user3
+      groups: superusers
+
+    lineinfile:
+      path: /etc/sudoers
+      state: present
+      regexp: '^%superusers'
